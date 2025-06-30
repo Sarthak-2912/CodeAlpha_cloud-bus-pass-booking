@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Bus Pass Booking</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #5e60ce;
+      --secondary: #7400b8;
+      --light: #f8f9fa;
+      --dark: #1e1e2f;
+      --text: #212529;
+    }
+
+    * {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #dbe4ff, #edf2fb);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 2rem;
+    }
+
+    [data-theme="dark"] body {
+      background: linear-gradient(135deg, #1e1e2f, #2a2b3c);
+      color: #eee;
+    }
+
+    .card-glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      animation: slideFade 0.7s ease;
+    }
+
+    @keyframes slideFade {
+      0% { opacity: 0; transform: translateY(30px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn-book {
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+      transition: 0.3s ease;
+    }
+
+    .btn-book:hover {
+      background: var(--secondary);
+      transform: scale(1.03);
+    }
+
+    .qr-code {
+      margin-top: 15px;
+      text-align: center;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .form-switch {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 🌗 Dark Mode Switch -->
+  <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" id="darkModeToggle">
+    <label class="form-check-label text-dark" for="darkModeToggle">Dark Mode</label>
+  </div>
+
+  <div class="card-glass">
+    <h2 class="text-center mb-4">🚍 Book Your Bus Ticket</h2>
+    <form id="ticketForm">
+      <input type="text" id="user" class="form-control mb-3" placeholder="Your Name" required>
+      <select id="source" class="form-control mb-3" required>
+        <option value="">From (Source)</option>
+        <option>Kashmere Gate</option>
+        <option>ISBT Anand Vihar</option>
+        <option>Rajiv Chowk</option>
+        <option>Lajpat Nagar</option>
+        <option>Saket</option>
+        <option>Dwarka Sector 21</option>
+        <option>Nehru Place</option>
+        <option>AIIMS</option>
+        <option>Hauz Khas</option>
+        <option>Rohini West</option>
+        <option>Karol Bagh</option>
+        <option>Connaught Place</option>
+        <option>Vasant Vihar</option>
+        <option>Janakpuri</option>
+        <option>Okhla</option>
+      </select>
+
+      <select id="destination" class="form-control mb-3" required>
+        <option value="">To (Destination)</option>
+        <option>Kashmere Gate</option>
+        <option>ISBT Anand Vihar</option>
+        <option>Rajiv Chowk</option>
+        <option>Lajpat Nagar</option>
+        <option>Saket</option>
+        <option>Dwarka Sector 21</option>
+        <option>Nehru Place</option>
+        <option>AIIMS</option>
+        <option>Hauz Khas</option>
+        <option>Rohini West</option>
+        <option>Karol Bagh</option>
+        <option>Connaught Place</option>
+        <option>Vasant Vihar</option>
+        <option>Janakpuri</option>
+        <option>Okhla</option>
+      </select>
+
+      <input type="number" id="passengers" min="1" class="form-control mb-3" placeholder="Number of Passengers" required>
+      <button type="submit" class="btn btn-book w-100">Book Now</button>
+    </form>
+
+    <div id="message" class="mt-4"></div>
+    <div id="qrDisplay" class="qr-code"></div>
+  </div>
+
+  <script>
+    // Dark Mode
+    document.getElementById("darkModeToggle").addEventListener("change", function () {
+      document.documentElement.setAttribute("data-theme", this.checked ? "dark" : "light");
+    });
+
+    // Form Submit
+    document.getElementById("ticketForm").onsubmit = async function (e) {
+      e.preventDefault();
+      const user = document.getElementById("user").value;
+      const source = document.getElementById("source").value;
+      const destination = document.getElementById("destination").value;
+      const passengers = document.getElementById("passengers").value;
+
+      const res = await fetch("/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, source, destination, passengers })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById("message").innerHTML = `
+          <div class="alert alert-success">
+            ✅ <strong>${data.message}</strong><br>
+            🎟️ Ticket ID: ${data.ticket_id}<br>
+            👤 Name: ${user}<br>
+            🚍 Route: ${data.route}<br>
+            👥 Passengers: ${data.passengers}<br>
+            💰 Fare: ₹${data.fare}<br>
+            📥 <a href="/download/${data.ticket_id}" class="btn btn-sm btn-outline-dark mt-2">Download PDF</a>
+          </div>`;
+        document.getElementById("qrDisplay").innerHTML = `<img src="${data.qr_path}" width="120" alt="QR Code">`;
+      } else {
+        document.getElementById("message").innerHTML = `<div class="alert alert-danger">❌ ${data.error}</div>`;
+        document.getElementById("qrDisplay").innerHTML = ``;
+      }
+    };
+  </script>
+</body>
+</html>
